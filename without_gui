@@ -1,0 +1,140 @@
+import cv2
+import os
+from PIL import Image
+import pytesseract
+import pandas as pd
+
+
+def verify():
+    image = cv2.imread("{}.png".format(name))
+    f = open("name.txt", "r")
+    print(f.read())
+    cv2.imshow("Image", image)
+    cv2.waitKey(10000)
+    ver = str(input("Is the image identified correctly  Response:y/n "))
+    if ver == "y":
+        ver = True
+        print('true')
+        return ver
+
+    else:
+        ver = False
+        print('false')
+        return ver
+
+
+def process():
+    cam = cv2.VideoCapture(0)  # taking the feed
+    while True:
+        check, frame = cam.read()
+        print(check)
+        print(frame)
+
+        cv2.imshow("capture", frame)
+
+        key = cv2.waitKey(1)
+
+        if key == ord('q'):
+            img_name = "{}.png".format(name)
+            cv2.imwrite(img_name, frame)
+            # cv2.imshow("{} written!".format(img_name), frame)
+            cv2.destroyAllWindows()
+            break
+
+    # shut the camera
+    cam.release()
+
+    # load the example image and convert it to grayscale
+    image = cv2.imread("{}.png".format(name))
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # write the grayscale image to disk as a temporary file so we can
+    # apply OCR to it
+    filename = "{}.png".format(os.getpid())
+    cv2.imwrite(filename, gray)
+
+    # load the image as a PIL/Pillow image, apply OCR, and then delete
+    # the temporary file
+    text = pytesseract.image_to_string(Image.open(filename))
+    os.remove(filename)
+    print(text)
+    print('converted to text')
+
+    # export to .txt file
+    # stdoutOrigin = sys.stdout
+    with open("{}.txt".format(name), "w") as f:
+        f.write(text)
+
+    # os.remove(filename)
+    # print(text)
+
+    # sys.stdout.close()
+    # sys.stdout = stdoutOrigin
+
+
+# -----------------------------main-------------------------------------------#
+
+name = input(str('enter a name'))
+image = cv2.imread("{}.png".format(name))
+count = 1
+process()
+# verify()
+print('count is one one')
+while verify() == False:
+    if count <= 3:
+        count = count + 1
+        process()
+        #verify()
+        print('count is ', count)
+
+
+    elif count > 3:
+        print('please type the correct words and save the file and close the txt file and press spacebar')
+
+        os.startfile('{}.txt'.format(name))
+        cv2.imshow("Image", image)
+        cv2.waitKey(0)
+        break
+
+
+print('readlist is running')
+
+with open("{}.txt".format(name)) as f1:
+    os.startfile('{}.txt'.format(name))
+    flat_list = [word for line in f1 for word in line.split()]
+    print(flat_list)
+
+# ---------read the csv file of pills-------------------------------------------#
+df = pd.read_excel('items.xlsx', sheet_name=0)  # can also index sheet by name or fetch all sheets
+bin_no = df['BIN no'].tolist()
+Name = df['Name'].tolist()
+content = df['content'].tolist()
+
+print(bin_no)
+print(Name)
+print(content)
+
+# iterating through the list
+final_list = []
+i = 0
+for i in range(len(flat_list)):
+    for j in range(len(Name)):
+        if Name[j] == flat_list[i]:
+            if content[j] == flat_list[i + 1]:
+                final_list.append(bin_no[j])
+                final_list.append(Name[j])
+                final_list.append(content[j])
+                x = i
+                for k in range(x, len(flat_list)):
+                    if 'Supply' == flat_list[k]:
+                        print(flat_list[k + 1])
+                        final_list.append(flat_list[k + 1])
+
+                    else:
+                        continue
+
+            else:
+                continue
+        else:
+            continue
+print('final list is ', final_list)
